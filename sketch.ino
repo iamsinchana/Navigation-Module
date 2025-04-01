@@ -6,40 +6,35 @@
 #include <Adafruit_Sensor.h>
 #include <esp_timer.h>
 
-// Pin declarations
-const volatile int TRIG_PIN = 12;      // Trigger pin for Ultrasonic sensor
-const volatile int ECHO_PIN = 13;      // Echo pin for Ultrasonic sensor
+volatile float TRIG_PIN = 12;      
+volatile float ECHO_PIN = 13;      
 const volatile int LED_OBSTACLE = 2;   // Red LED for obstacle detection
 const volatile int LED_FORWARD = 4;    // Green LED for forward motion
 const volatile int LED_AVOIDANCE = 5;  // Yellow LED for obstacle avoidance
 const volatile int CS_PIN = 15;        // Chip Select (CS) for SD Card module
 const volatile int SCK_PIN = 18;       // SPI Clock for SD Card module
-const volatile int MOSI_PIN = 26;      // SPI Data (MOSI) for SD Card module
-const volatile int MISO_PIN = 19;      // SPI Data (MISO) for SD Card module
-const volatile int SDA_PIN = 36;       // I2C Data (SDA) for MPU6050
-const volatile int SCL_PIN = 35;       // I2C Clock (SCL) for MPU6050
+const volatile int MOSI_PIN = 26;      // SPI Data (MOSI) 
+const volatile int MISO_PIN = 19;      // SPI Data (MISO)
+const volatile int SDA_PIN = 36;       // I2C Data (SDA) 
+const volatile int SCL_PIN = 35;       // I2C Clock (SCL) 
 
 // FreeRTOS Queue
 QueueHandle_t obstacleQueue;
-
 // MPU6050 Sensor
 Adafruit_MPU6050 mpu;
 
-// Ultrasonic measurement variables
-volatile long pulseDuration = 0;
-volatile int distance = 0;
+volatile float pulseDuration = 0;
+volatile float distance = 0;
 
 // Interrupt Service Routine (ISR) for Echo pin
 void IRAM_ATTR handleEchoPulse() {
   if (digitalRead(ECHO_PIN) == HIGH) {
-    // Start timing the pulse
     pulseDuration = micros();
   } else {
-    // Calculate pulse duration
     pulseDuration = micros() - pulseDuration;
-    distance = pulseDuration * 0.034 / 2; // Convert to cm
-    if (distance < 50) { // Send to queue if obstacle detected
-      xQueueSendFromISR(obstacleQueue, (const void*)&distance, NULL); // Fixed type casting
+    distance = pulseDuration * 0.034 / 2; 
+    if (distance < 50) { 
+      xQueueSendFromISR(obstacleQueue, (const void*)&distance, NULL); // type casting
     }
   }
 }
@@ -61,7 +56,7 @@ void dataLoggingTask(void *pvParameters) {
     } else {
       Serial.println("Failed to open log file!");
     }
-    vTaskDelay(pdMS_TO_TICKS(500)); // Log data every 500ms
+    vTaskDelay(pdMS_TO_TICKS(500)); 
   }
 }
 
@@ -70,17 +65,16 @@ void navigationTask(void *pvParameters) {
   int obstacleDistance;
   while (true) {
     if (xQueueReceive(obstacleQueue, &obstacleDistance, portMAX_DELAY)) {
-      // Obstacle detected, simulate avoidance
       digitalWrite(LED_AVOIDANCE, HIGH);
       delay(500);
       digitalWrite(LED_AVOIDANCE, LOW);
     } else {
-      // No obstacle, move forward
+     
       digitalWrite(LED_FORWARD, HIGH);
       delay(1000);
       digitalWrite(LED_FORWARD, LOW);
     }
-    vTaskDelay(pdMS_TO_TICKS(100)); // Check queue every 100ms
+    vTaskDelay(pdMS_TO_TICKS(100)); 
   }
 }
 
@@ -101,7 +95,7 @@ void setup() {
   // Initialize SD card
   if (!SD.begin(CS_PIN)) {
     Serial.println("SD Card initialization failed! Check wiring, format, or module voltage.");
-    while (true); // Halt execution
+    while (true); // stop execution
   }
   Serial.println("SD Card initialized.");
 
@@ -109,7 +103,7 @@ void setup() {
   Wire.begin(SDA_PIN, SCL_PIN);
   if (!mpu.begin()) {
     Serial.println("Failed to initialize MPU6050!");
-    while (true); // Halt if MPU6050 fails
+    while (true); // Stop if MPU6050 fails
   }
   Serial.println("MPU6050 initialized.");
 
@@ -129,10 +123,8 @@ void setup() {
   };
   esp_timer_handle_t trigTimer;
   esp_timer_create(&trigTimerArgs, &trigTimer);
-  esp_timer_start_periodic(trigTimer, 100000); // Trigger every 100ms
+  esp_timer_start_periodic(trigTimer, 100000); 
 }
 
-// Loop function (unused with FreeRTOS)
-void loop() {
-  // Empty
-}
+//void loop() {
+//}
